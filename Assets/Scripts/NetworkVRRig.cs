@@ -31,6 +31,7 @@ public class NetworkVRRig : NetworkBehaviour
         {
             BuscarReferenciasLocales();
             OcultarMisVisualesLocales();
+            TeletransportarRigLocalASpawn();
 
             Debug.Log("NetworkVRRig: Este avatar pertenece al jugador local.");
         }
@@ -217,5 +218,20 @@ public class NetworkVRRig : NetworkBehaviour
         {
             rend.enabled = false;
         }
+    }
+
+    private void TeletransportarRigLocalASpawn()
+    {
+        Transform playerObject = GameplayNetworkPlayerSpawner.BuscarObjetoJugadorLocal();
+
+        if (playerObject == null)
+        {
+            Debug.LogWarning("NetworkVRRig: No se encontró el objeto 'player1' / local player para teletransportar.");
+            return;
+        }
+
+        GameplayNetworkPlayerSpawner.TeletransportarTransform(playerObject, transform.position, transform.rotation);
+
+        Debug.Log($"NetworkVRRig: Objeto local '{playerObject.name}' teletransportado a la posición de spawn: {transform.position}");
     }
 }

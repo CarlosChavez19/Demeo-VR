@@ -11,8 +11,19 @@ public class GameEndManager : NetworkBehaviour
 
     [Header("UI Game Over")]
     [SerializeField] private GameObject panelGameOver;
+    [SerializeField] private Image imagenFondoGameOver;
     [SerializeField] private TMP_Text textoGameOver;
     [SerializeField] private Button botonVolverLobby;
+
+    [Header("Fondos Pantalla Final - Sprites (4 Fondos)")]
+    [Tooltip("Fondo de victoria para Héroes (Heroe 1 y Heroe 2)")]
+    [SerializeField] private Sprite fondoVictoriaHeroes;
+    [Tooltip("Fondo de derrota para Héroes (Heroe 1 y Heroe 2)")]
+    [SerializeField] private Sprite fondoDerrotaHeroes;
+    [Tooltip("Fondo de victoria para el Dungeon Master")]
+    [SerializeField] private Sprite fondoVictoriaDM;
+    [Tooltip("Fondo de derrota para el Dungeon Master")]
+    [SerializeField] private Sprite fondoDerrotaDM;
 
     [Header("Configuración")]
     [SerializeField] private float intervaloRevision = 0.5f;
@@ -292,6 +303,8 @@ public class GameEndManager : NetworkBehaviour
         if (panelGameOver != null)
             panelGameOver.SetActive(true);
 
+        ActualizarFondoGameOver(resultado, rolLocal);
+
         if (textoGameOver != null)
             textoGameOver.text = mensajeFinal;
 
@@ -341,5 +354,41 @@ public class GameEndManager : NetworkBehaviour
 
         if (botonVolverLobby != null)
             botonVolverLobby.interactable = false;
+    }
+
+    private void ActualizarFondoGameOver(string resultado, string rolLocal)
+    {
+        bool esDM = (rolLocal == "Dungeon Master");
+        bool esVictoria = false;
+
+        if (resultado == "DM_WIN")
+        {
+            esVictoria = esDM;
+        }
+        else if (resultado == "HEROES_WIN")
+        {
+            esVictoria = !esDM;
+        }
+
+        Sprite spriteSeleccionado = null;
+
+        if (esDM)
+        {
+            spriteSeleccionado = esVictoria ? fondoVictoriaDM : fondoDerrotaDM;
+        }
+        else
+        {
+            // Aplica tanto a Héroe 1 como a Héroe 2
+            spriteSeleccionado = esVictoria ? fondoVictoriaHeroes : fondoDerrotaHeroes;
+        }
+
+        if (imagenFondoGameOver != null && spriteSeleccionado != null)
+        {
+            imagenFondoGameOver.sprite = spriteSeleccionado;
+        }
+
+        Debug.Log(
+            $"[GameEndManager TODOS] Fondo actualizado en cliente local. Rol = {rolLocal} | EsDM = {esDM} | EsVictoria = {esVictoria}"
+        );
     }
 }
