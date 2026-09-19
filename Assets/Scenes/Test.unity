@@ -517,7 +517,7 @@ MonoBehaviour:
   imagenFondoGameOver: {fileID: 1779865681}
   textoGameOver: {fileID: 201627531}
   botonVolverLobby: {fileID: 328207788}
-  fondoVictoriaHeroes: {fileID: 21300000, guid: 950fb95cb336afd41bbc10819ca0ed7c, type: 3}
+  fondoVictoriaHeroes: {fileID: 21300000, guid: 13c5534d1fe7d5041972106496b8ef1e, type: 3}
   fondoDerrotaHeroes: {fileID: 21300000, guid: abcc3e47e47f8ba42b9c3aaf14216e69, type: 3}
   fondoVictoriaDM: {fileID: 21300000, guid: 959a6921cb0357649b7ff715502437fc, type: 3}
   fondoDerrotaDM: {fileID: 21300000, guid: 68d3fcb9564915449a87face8bf346d0, type: 3}
