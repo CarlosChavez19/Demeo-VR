@@ -22,6 +22,10 @@ public class FichaRPG : MonoBehaviour
 
     [Header("Restricciones")]
     public int rangoMovimiento = 3;
+    [SerializeField] private bool haMovidoEsteTurno = false;
+    public bool HaMovidoEsteTurno => haMovidoEsteTurno;
+
+    private int ultimoTurnoDetectadoFicha = -1;
 
     [Header("Propiedad y Turnos")]
     public bool esHeroe;
@@ -283,8 +287,15 @@ public class FichaRPG : MonoBehaviour
             return;
         }
 
+        bool esMovimientoNuevo = (casillaActual != null && casillaActual != nuevaCasilla);
+
         // 1. Aplicar colocación lógica y física de forma local
         ColocarEnCasillaDesdeRed(nuevaCasilla);
+
+        if (esMovimientoNuevo)
+        {
+            haMovidoEsteTurno = true;
+        }
 
         // 2. Sincronizar en red por medio de BoardPiece si aplica
         BoardPiece boardPiece = GetComponent<BoardPiece>();
@@ -297,6 +308,10 @@ public class FichaRPG : MonoBehaviour
             }
             else
             {
+                if (esMovimientoNuevo)
+                {
+                    boardPiece.HasMovedThisTurn = true;
+                }
                 // El host retransmite directamente a todos los clientes
                 boardPiece.RPC_MudarFichaATodos(nuevaCasilla.coordenadaX, nuevaCasilla.coordenadaZ);
             }
@@ -367,7 +382,27 @@ public class FichaRPG : MonoBehaviour
 
     public void ColocarEnCasillaInicial(CasillaComponent nuevaCasilla)
     {
-        ColocarEnCasilla(nuevaCasilla);
+        ColocarEnCasillaDesdeRed(nuevaCasilla);
+        haMovidoEsteTurno = false;
+
+        BoardPiece bp = GetComponent<BoardPiece>();
+        if (bp == null) bp = GetComponentInParent<BoardPiece>();
+        if (bp != null && bp.Object != null && bp.Object.HasStateAuthority)
+        {
+            bp.HasMovedThisTurn = false;
+        }
+    }
+
+    public void ReiniciarTurno()
+    {
+        haMovidoEsteTurno = false;
+
+        BoardPiece bp = GetComponent<BoardPiece>();
+        if (bp == null) bp = GetComponentInParent<BoardPiece>();
+        if (bp != null && bp.Object != null && bp.Object.HasStateAuthority)
+        {
+            bp.HasMovedThisTurn = false;
+        }
     }
 
     private bool PuedeMoverEstaFicha(bool mostrarLogs)
@@ -462,16 +497,12 @@ public class FichaRPG : MonoBehaviour
             return false;
         }
 
-        BoardPiece boardPiece = GetComponent<BoardPiece>();
-        if (boardPiece == null)
-            boardPiece = GetComponentInParent<BoardPiece>();
-
-        if (boardPiece != null && boardPiece.HasAttackedThisTurn)
+        if (haMovidoEsteTurno)
         {
             if (mostrarLogs)
             {
                 Debug.LogWarning(
-                    "[FichaRPG] Movimiento cancelado. El héroe ya realizó un ataque en este turno. Ficha = " +
+                    "[FichaRPG] Movimiento cancelado. El héroe ya se movió en este turno. Ficha = " +
                     gameObject.name
                 );
             }
@@ -479,11 +510,54 @@ public class FichaRPG : MonoBehaviour
             return false;
         }
 
+        BoardPiece boardPiece = GetComponent<BoardPiece>();
+        if (boardPiece == null)
+            boardPiece = GetComponentInParent<BoardPiece>();
+
+        if (boardPiece != null)
+        {
+            if (boardPiece.HasAttackedThisTurn)
+            {
+                if (mostrarLogs)
+                {
+                    Debug.LogWarning(
+                        "[FichaRPG] Movimiento cancelado. El héroe ya realizó un ataque en este turno. Ficha = " +
+                        gameObject.name
+                    );
+                }
+
+                return false;
+            }
+
+            if (boardPiece.HasMovedThisTurn)
+            {
+                if (mostrarLogs)
+                {
+                    Debug.LogWarning(
+                        "[FichaRPG] Movimiento cancelado. El héroe ya se movió en este turno (Red). Ficha = " +
+                        gameObject.name
+                    );
+                }
+
+                return false;
+            }
+        }
+
         return true;
     }
 
     private void ActualizarPermisoDeAgarre(bool forzarLog)
     {
+        if (TurnManager.Instance != null)
+        {
+            int turnoActual = TurnManager.Instance.CurrentTurnIndex;
+            if (turnoActual != ultimoTurnoDetectadoFicha)
+            {
+                ultimoTurnoDetectadoFicha = turnoActual;
+                haMovidoEsteTurno = false;
+            }
+        }
+
         if (grabInteractable == null)
             return;
 
@@ -511,6 +585,15 @@ public class FichaRPG : MonoBehaviour
     {
         estaSiendoSostenida = false;
         casillaPrevisualizada = null;
+
+        haMovidoEsteTurno = false;
+
+        BoardPiece bp = GetComponent<BoardPiece>();
+        if (bp == null) bp = GetComponentInParent<BoardPiece>();
+        if (bp != null && bp.Object != null && bp.Object.HasStateAuthority)
+        {
+            bp.HasMovedThisTurn = false;
+        }
 
         if (GridManager.Instance != null)
         {
@@ -636,6 +719,15 @@ public class FichaRPG : MonoBehaviour
     {
         if (casillaActual == null)
             return;
+
+        haMovidoEsteTurno = false;
+
+        BoardPiece bp = GetComponent<BoardPiece>();
+        if (bp == null) bp = GetComponentInParent<BoardPiece>();
+        if (bp != null && bp.Object != null && bp.Object.HasStateAuthority)
+        {
+            bp.HasMovedThisTurn = false;
+        }
 
         casillaActual.estaOcupada = true;
 

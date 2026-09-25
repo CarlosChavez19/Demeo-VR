@@ -360,6 +360,11 @@ public class GridManager : MonoBehaviour
                 casilla.SetearEstadoVisual("Niebla");
             }
         }
+
+        if (KeyWinManager.Instance != null)
+        {
+            KeyWinManager.Instance.ActualizarVisibilidadNiebla(casillasVisiblesColectivas);
+        }
     }
 
 }

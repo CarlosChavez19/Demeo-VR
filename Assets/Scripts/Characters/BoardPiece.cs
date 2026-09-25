@@ -20,6 +20,7 @@ namespace DemeoVR.Gameplay
 
         [Header("Control de Combate")]
         [Networked] public bool HasAttackedThisTurn { get; set; }
+        [Networked] public bool HasMovedThisTurn { get; set; }
         [Networked] public bool IsDead { get; set; }
 
         public int MaxHealth =>
@@ -57,6 +58,7 @@ namespace DemeoVR.Gameplay
             CurrentLevel = 1;
             CurrentXP = 0;
             HasAttackedThisTurn = false;
+            HasMovedThisTurn = false;
 
             RewardGivenOnDeath = false;
             IsStunned = false;
@@ -93,6 +95,7 @@ namespace DemeoVR.Gameplay
                 return;
 
             HasAttackedThisTurn = false;
+            HasMovedThisTurn = false;
 
             if (baseData != null)
             {
@@ -408,10 +411,22 @@ namespace DemeoVR.Gameplay
         }
 
         [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    public void RPC_RequestColocarEnCasilla(int x, int z)
-    {
-        RPC_MudarFichaATodos(x, z);
-    }
+        public void RPC_RequestColocarEnCasilla(int x, int z)
+        {
+            FichaRPG ficha = GetComponent<FichaRPG>();
+            if (ficha != null && ficha.casillaActual != null)
+            {
+                if (ficha.casillaActual.coordenadaX != x || ficha.casillaActual.coordenadaZ != z)
+                {
+                    HasMovedThisTurn = true;
+                }
+                else
+                {
+                    HasMovedThisTurn = false;
+                }
+            }
+            RPC_MudarFichaATodos(x, z);
+        }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_MudarFichaATodos(int x, int z)

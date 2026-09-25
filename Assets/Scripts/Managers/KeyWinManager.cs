@@ -15,9 +15,9 @@ public class KeyWinManager : NetworkBehaviour
     [SerializeField] private float intervaloRevision = 0.25f;
     [SerializeField] private int distanciaMinimaAlSpawn = 6;
 
-    [Networked] private int KeyX { get; set; }
-    [Networked] private int KeyZ { get; set; }
-    [Networked] private bool KeyPlaced { get; set; }
+    [Networked] public int KeyX { get; set; }
+    [Networked] public int KeyZ { get; set; }
+    [Networked] public bool KeyPlaced { get; set; }
 
     private bool networkReady = false;
     private bool victoriaProcesada = false;
@@ -33,7 +33,7 @@ public class KeyWinManager : NetworkBehaviour
         networkReady = true;
 
         if (keyObject != null)
-            keyObject.SetActive(false);
+            keyObject.SetActive(true);
 
         if (Object.HasStateAuthority)
         {
@@ -182,13 +182,17 @@ public class KeyWinManager : NetworkBehaviour
         if (keyObject != null)
         {
             keyObject.transform.position = posicion;
-            keyObject.SetActive(true);
         }
 
         Debug.Log(
-            "[KeyWinManager TODOS] Llave mostrada en posición = " +
+            "[KeyWinManager TODOS] Llave posicinada en = " +
             posicion
         );
+
+        if (GridManager.Instance != null)
+        {
+            GridManager.Instance.ActualizarNieblaDeGuerraGlobal();
+        }
     }
 
     private void RevisarSiHeroeTocoLlave()
@@ -252,6 +256,51 @@ public class KeyWinManager : NetworkBehaviour
             keyObject.SetActive(false);
 
         Debug.Log("[KeyWinManager TODOS] Llave ocultada por victoria de héroes.");
+    }
+
+    public void ActualizarVisibilidadNiebla(HashSet<CasillaComponent> casillasVisibles)
+    {
+        if (keyObject == null)
+            return;
+
+        if (!networkReady || Object == null || !Object.IsValid)
+        {
+            SetRenderersEnabled(false);
+            return;
+        }
+        bool estaVisible = false;
+
+        string rolLocal = GameplayRoleCache.LocalRole;
+
+        if (rolLocal == "Dungeon Master")
+        {
+            // El Dungeon Master SIEMPRE ve la llave para poder defenderla
+            estaVisible = true;
+        }
+        else
+        {
+            // Los héroes solo la ven si la casilla está fuera de la niebla de guerra
+            if (GridManager.Instance != null &&
+                GridManager.Instance.DiccionarioTablero.TryGetValue(new Vector2Int(KeyX, KeyZ), out CasillaComponent casillaLlave))
+            {
+                estaVisible = casillasVisibles != null && casillasVisibles.Contains(casillaLlave);
+            }
+        }
+
+        SetRenderersEnabled(estaVisible);
+
+        Debug.Log($"[KeyWinManager] Visibilidad render de la llave actualizada: Visible = {estaVisible} (Rol = {rolLocal}) en Casilla ({KeyX}, {KeyZ})");
+    }
+
+    private void SetRenderersEnabled(bool state)
+    {
+        if (keyObject == null) return;
+
+        Renderer[] renderers = keyObject.GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer r in renderers)
+        {
+            r.enabled = state;
+        }
     }
 
     private bool EsHeroeActivo(string rol)

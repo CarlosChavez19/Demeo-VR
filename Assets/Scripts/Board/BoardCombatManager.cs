@@ -80,6 +80,8 @@ public class BoardCombatManager : NetworkBehaviour
                 return;
             }
 
+            fichaHeroe.ReiniciarTurno();
+
             BoardPiece statsHeroe = ObtenerBoardPiece(fichaHeroe);
 
             if (statsHeroe != null)
